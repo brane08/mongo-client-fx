@@ -1,5 +1,4 @@
-import java.lang.Exception
-import java.lang.RuntimeException
+package brane08.fx.mongo
 
 class ApplicationException : RuntimeException {
 

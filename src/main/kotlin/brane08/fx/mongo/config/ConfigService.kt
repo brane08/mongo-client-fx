@@ -1,7 +1,6 @@
 package brane08.fx.mongo.config
 
 import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 
 
@@ -14,7 +13,7 @@ class ConfigService {
 
     init {
         db = Database.connect(connectionString, "org.h2.Driver", username, password)
-//        transaction { SchemaUtils.create(Connections) }
+//        transaction { org.jetbrains.exposed.sql.SchemaUtils.create(Connections) }
 
     }
 

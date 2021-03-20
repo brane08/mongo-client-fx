@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<VBox spacing="10" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="brane08.fx.mongo.MainController">
+    <MenuBar>
+        <Menu text="File">
+            <MenuItem onAction="#openConnectWindow" text="Connect" />
+            <MenuItem text="Exit" />
+        </Menu>
+        <Menu text="Edit">
+            <MenuItem text="Copy" />
+            <MenuItem text="Paste" />
+        </Menu>
+        <Menu text="Help">
+            <MenuItem text="About" />
+        </Menu>
+    </MenuBar>
+    <AnchorPane prefHeight="400.0" prefWidth="600.0">
+        <Button text="Press Here!" />
+        <Text text="Should show controls here" />
+    </AnchorPane>
+</VBox>
