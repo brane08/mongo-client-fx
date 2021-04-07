@@ -1,7 +1,8 @@
 package brane08.fx.mongo
 
+import brane08.fx.mongo.config.FxAppModule
+import brane08.fx.mongo.config.FxStageModule
 import brane08.fx.mongo.config.GuiceFXMLLoader
-import brane08.fx.mongo.di.FxAppModule
 import com.google.inject.Guice
 import javafx.application.Application
 import javafx.geometry.Rectangle2D
@@ -13,7 +14,7 @@ import javafx.stage.Stage
 class MongoApp : Application() {
 
     override fun start(stage: Stage) {
-        val guice = Guice.createInjector(FxAppModule())
+        val guice = Guice.createInjector(FxAppModule(), FxStageModule(stage))
         val fxmlLoader = guice.getInstance(GuiceFXMLLoader::class.java)
         with(stage) {
             minWidth = WIDTH

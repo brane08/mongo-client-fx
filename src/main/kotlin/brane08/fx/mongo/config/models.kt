@@ -23,3 +23,11 @@ class Connection(id: EntityID<Int>) : IntEntity(id) {
     var password by Connections.password
     var database by Connections.database
 }
+
+object Favorites: IntIdTable() {
+    val queryText: Column<String> = varchar("query_text", 1000)
+}
+
+class Favorite(id: EntityID<Int>): IntEntity(id) {
+    var queryText by Favorites.queryText
+}

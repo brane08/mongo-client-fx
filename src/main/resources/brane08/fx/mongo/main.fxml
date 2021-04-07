@@ -1,25 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.text.*?>
-
-<VBox spacing="10" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="brane08.fx.mongo.MainController">
+<?import javafx.scene.input.KeyCodeCombination?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Text?>
+<VBox spacing="10" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="brane08.fx.mongo.MainView">
     <MenuBar>
-        <Menu text="File">
-            <MenuItem onAction="#openConnectWindow" text="Connect" />
-            <MenuItem text="Exit" />
+        <Menu text="Connection">
+            <MenuItem onAction="#openConnectWindow" text="New">
+                <accelerator>
+                    <KeyCodeCombination alt="UP" code="N" control="DOWN" meta="UP" shift="UP" shortcut="UP"/>
+                </accelerator>
+            </MenuItem>
+            <MenuItem onAction="#openConnection" text="Open"/>
+            <SeparatorMenuItem/>
+            <MenuItem text="Exit"/>
         </Menu>
         <Menu text="Edit">
-            <MenuItem text="Copy" />
-            <MenuItem text="Paste" />
+            <MenuItem style="-fx-pref-width: 100" text="Copy"/>
+            <MenuItem style="-fx-pref-width: 100" text="Paste"/>
         </Menu>
         <Menu text="Help">
-            <MenuItem text="About" />
+            <MenuItem style="-fx-pref-width: 100" text="About"/>
         </Menu>
     </MenuBar>
     <AnchorPane prefHeight="400.0" prefWidth="600.0">
-        <Button text="Press Here!" />
-        <Text text="Should show controls here" />
+        <Button text="Press Here!"/>
+        <Text text="Should show controls here"/>
     </AnchorPane>
 </VBox>

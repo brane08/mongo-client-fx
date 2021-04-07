@@ -10,5 +10,4 @@ class StringBooleanConverter : StringConverter<Boolean>() {
     override fun fromString(value: String): Boolean {
         return "true".equals(value, true)
     }
-
 }

@@ -4,8 +4,9 @@ import brane08.fx.mongo.config.Connection
 import com.mongodb.MongoException
 import com.mongodb.client.MongoClient
 import com.mongodb.client.MongoClients
+import javax.inject.Singleton
 
-class MongoServices {
+class MongoService {
 
     fun execute(): String {
         TODO()
@@ -16,7 +17,7 @@ class MongoServices {
     }
 
     private fun getClient(servers: String, userName: String, password: String, database: String): MongoClient {
-        val url = "mongodb://${userName}:${password}@${servers}" + "/${database}?authSource=admin"
+        val url = "mongodb+srv://${userName}:${password}@${servers}" + "/${database}?authSource=admin"
         return MongoClients.create(url);
     }
 
