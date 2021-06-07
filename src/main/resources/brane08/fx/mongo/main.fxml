@@ -9,14 +9,14 @@
       fx:controller="brane08.fx.mongo.MainView">
     <MenuBar>
         <Menu text="Connection">
-            <MenuItem onAction="#openConnectWindow" text="New">
+            <MenuItem style="-fx-pref-width: 100" onAction="#openConnectWindow" text="New">
                 <accelerator>
                     <KeyCodeCombination alt="UP" code="N" control="DOWN" meta="UP" shift="UP" shortcut="UP"/>
                 </accelerator>
             </MenuItem>
-            <MenuItem onAction="#openConnection" text="Open"/>
+            <MenuItem style="-fx-pref-width: 100" onAction="#openConnection" text="Open"/>
             <SeparatorMenuItem/>
-            <MenuItem text="Exit"/>
+            <MenuItem style="-fx-pref-width: 100" text="Exit"/>
         </Menu>
         <Menu text="Edit">
             <MenuItem style="-fx-pref-width: 100" text="Copy"/>

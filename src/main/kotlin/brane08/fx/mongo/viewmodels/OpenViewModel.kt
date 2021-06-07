@@ -1,4 +1,4 @@
-package brane08.fx.mongo.connect
+package brane08.fx.mongo.viewmodels
 
 import brane08.fx.mongo.services.ConfigService
 import javafx.collections.FXCollections

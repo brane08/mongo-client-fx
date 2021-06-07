@@ -1,5 +1,6 @@
-package brane08.fx.mongo.connect
+package brane08.fx.mongo.views
 
+import brane08.fx.mongo.viewmodels.ConnectViewModel
 import com.google.inject.Inject
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.event.ActionEvent
