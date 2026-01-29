@@ -17,8 +17,8 @@
         <kotlin.compiler.jvmTarget>16</kotlin.compiler.jvmTarget>
         <kotlin.version>1.5.10</kotlin.version>
         <javafx.version>16</javafx.version>
-        <logback.version>1.2.3</logback.version>
-        <exposed.version>0.32.1</exposed.version>
+        <logback.version>1.5.25</logback.version>
+        <exposed.version>1.0.0</exposed.version>
     </properties>
     <dependencies>
         <dependency>
