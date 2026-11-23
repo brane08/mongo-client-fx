@@ -48,15 +48,17 @@ public class ConfigService {
     }
 
     public Connection getConnectionData(String name) {
-        return loadConnections().stream()
+        var stored = loadConnections().stream()
                 .filter(connection -> connection.name().equals(name))
                 .findFirst()
                 .orElseThrow(() -> new ApplicationException("Unknown connection: " + name));
+        return new Connection(
+                stored.name(), stored.servers(), stored.username(), decryptPassword(stored.password()), stored.database());
     }
 
     public void save(String name, String servers, String username, String password, String database) {
         var connections = new ArrayList<>(loadConnections());
-        var updated = new Connection(name, servers, username, password, database);
+        var updated = new Connection(name, servers, username, secretBox.encrypt(password), database);
         var existing = indexOf(connections, name);
         if (existing >= 0) {
             connections.set(existing, updated);
@@ -66,6 +68,7 @@ public class ConfigService {
         writeConnections(connections);
     }
 
+    /** Returns connections with passwords exactly as stored (possibly still encrypted). */
     List<Connection> loadConnections() {
         if (!Files.exists(confFile)) {
             return List.of();
@@ -82,7 +85,7 @@ public class ConfigService {
                 entry.getString(NAME),
                 entry.getString(SERVERS),
                 entry.getString(USERNAME),
-                decryptPassword(entry.getString(PASSWORD)),
+                entry.getString(PASSWORD),
                 entry.getString(DATABASE));
     }
 
@@ -129,7 +132,7 @@ public class ConfigService {
         map.put(NAME, connection.name());
         map.put(SERVERS, connection.servers());
         map.put(USERNAME, connection.username());
-        map.put(PASSWORD, secretBox.encrypt(connection.password()));
+        map.put(PASSWORD, connection.password());
         map.put(DATABASE, connection.database());
         return map;
     }

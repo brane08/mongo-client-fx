@@ -101,6 +101,33 @@ class ConfigServiceTest {
     }
 
     @Test
+    void undecryptableEntry_doesNotBreakListingOrSavingOthers(@TempDir Path dir) throws IOException {
+        Files.writeString(
+                dir.resolve("connections.conf"),
+                """
+                connections = [
+                  {
+                    name = "orphan"
+                    servers = "cluster.example.mongodb.net"
+                    username = "appuser"
+                    password = "ENC:dGFtpered=="
+                    database = "admin"
+                  }
+                ]
+                """);
+        var service = new ConfigService(dir);
+
+        assertEquals(List.of("orphan"), service.getConnectionNames());
+
+        service.save("fresh", "f.example.net", "u", "p", "db");
+
+        assertEquals(List.of("orphan", "fresh"), service.getConnectionNames());
+        assertEquals("p", service.getConnectionData("fresh").password());
+        assertThrows(ApplicationException.class, () -> service.getConnectionData("orphan"));
+        assertTrue(Files.readString(dir.resolve("connections.conf")).contains("ENC:dGFtpered=="));
+    }
+
+    @Test
     void getConnectionNames_emptyWhenNoConfig(@TempDir Path dir) {
         assertEquals(List.of(), new ConfigService(dir).getConnectionNames());
     }

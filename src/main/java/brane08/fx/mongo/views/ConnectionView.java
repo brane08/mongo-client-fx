@@ -5,6 +5,7 @@ import jakarta.inject.Inject;
 import java.net.URL;
 import java.util.ResourceBundle;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -60,10 +61,30 @@ public class ConnectionView implements Initializable {
 
     @FXML
     public void testConnection() {
+        if (showProgress.get()) {
+            return;
+        }
         showProgress.set(true);
-        LOGGER.log(System.Logger.Level.INFO, "Calling save connection: {0}", nameTxt.getText());
-        model.testConnection();
-        showProgress.set(false);
+        LOGGER.log(System.Logger.Level.INFO, "Calling test connection: {0}", nameTxt.getText());
+        var probe = model.prepareTest();
+        var task = new Task<Boolean>() {
+            @Override
+            protected Boolean call() {
+                return probe.get();
+            }
+        };
+        task.setOnSucceeded(e -> {
+            model.testConnectionProperty().set(task.getValue());
+            showProgress.set(false);
+        });
+        task.setOnFailed(e -> {
+            LOGGER.log(System.Logger.Level.ERROR, "Connection test failed", task.getException());
+            model.testConnectionProperty().set(false);
+            showProgress.set(false);
+        });
+        var thread = new Thread(task, "mongo-connection-test");
+        thread.setDaemon(true);
+        thread.start();
     }
 
     @FXML

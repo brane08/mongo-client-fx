@@ -1,14 +1,23 @@
 package brane08.fx.mongo.services;
 
 import brane08.fx.mongo.config.Connection;
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
+import com.mongodb.MongoCredential;
 import com.mongodb.MongoException;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.stream.StreamSupport;
 
 public class MongoService {
 
     static final System.Logger LOGGER = System.getLogger(MongoService.class.getName());
+
+    static final String SCHEME = "mongodb://";
+    static final String SRV_SCHEME = "mongodb+srv://";
+    static final String AUTH_SOURCE = "admin";
 
     public String execute() {
         throw new UnsupportedOperationException();
@@ -23,14 +32,30 @@ public class MongoService {
             var names = client.getDatabase(database).listCollectionNames();
             LOGGER.log(System.Logger.Level.INFO, "Collections: {0}", StreamSupport.stream(names.spliterator(), false).count());
             return true;
-        } catch (MongoException ex) {
+        } catch (MongoException | IllegalArgumentException ex) {
             LOGGER.log(System.Logger.Level.ERROR, ex.getMessage(), ex);
             return false;
         }
     }
 
-    private MongoClient client(String servers, String username, String password, String database) {
-        return MongoClients.create(
-                "mongodb+srv://%s:%s@%s/%s?authSource=admin".formatted(username, password, servers, database));
+    MongoClient client(String servers, String username, String password, String database) {
+        var settings = MongoClientSettings.builder().applyConnectionString(new ConnectionString(uri(servers, database)));
+        if (username != null && !username.isBlank()) {
+            var secret = password == null ? new char[0] : password.toCharArray();
+            settings.credential(MongoCredential.createCredential(username, AUTH_SOURCE, secret));
+        }
+        return MongoClients.create(settings.build());
+    }
+
+    static String uri(String servers, String database) {
+        var hosts = servers.strip();
+        if (!hosts.startsWith(SCHEME) && !hosts.startsWith(SRV_SCHEME)) {
+            var plain = hosts.contains(":") || hosts.contains(",");
+            hosts = (plain ? SCHEME : SRV_SCHEME) + hosts;
+        }
+        if (hosts.endsWith("/")) {
+            hosts = hosts.substring(0, hosts.length() - 1);
+        }
+        return hosts + "/" + URLEncoder.encode(database, StandardCharsets.UTF_8) + "?authSource=" + AUTH_SOURCE;
     }
 }
