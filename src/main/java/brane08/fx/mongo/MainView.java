@@ -11,7 +11,6 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
 import javafx.scene.control.Menu;
-import javafx.scene.control.MenuItem;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
@@ -39,14 +38,6 @@ public class MainView implements Initializable {
         stage.initOwner(rootStage);
         stage.setScene(new Scene(fxmlLoader.load("connection.fxml")));
         stage.show();
-    }
-
-    void refreshNames() {
-        newMenu.getItems().clear();
-        configService.getConnectionNames().forEach(name -> {
-            var menu = new MenuItem(name);
-            menu.getOnAction();
-        });
     }
 
     @Override

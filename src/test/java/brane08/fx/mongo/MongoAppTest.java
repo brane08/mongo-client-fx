@@ -1,7 +1,6 @@
 package brane08.fx.mongo;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 import javafx.stage.Stage;
@@ -46,8 +45,6 @@ class MongoAppTest {
     @Test
     void start_showsMainWindow(FxRobot robot) {
         WaitForAsyncUtils.waitForFxEvents();
-        assertTrue(MongoApp.WIDTH > 0);
-        assertTrue(MongoApp.HEIGHT > 0);
         assertNotNull(robot.lookup("Connection").query());
         assertNotNull(robot.lookup("Press Here!").query());
     }

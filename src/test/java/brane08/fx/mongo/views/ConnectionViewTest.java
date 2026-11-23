@@ -3,11 +3,14 @@ package brane08.fx.mongo.views;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
 import static org.testfx.api.FxAssert.verifyThat;
 import static org.testfx.matcher.control.TextInputControlMatchers.hasText;
 
 import brane08.fx.mongo.config.GuiceFXMLLoader;
 import brane08.fx.mongo.services.ConfigService;
+import brane08.fx.mongo.services.MongoService;
 import brane08.fx.mongo.support.TestFxModules;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -37,6 +40,7 @@ class ConnectionViewTest {
     Stage stage;
     GuiceFXMLLoader fxmlLoader;
     ConfigService configService;
+    MongoService mongoService;
 
     @Start
     void start(Stage stage) {
@@ -44,6 +48,7 @@ class ConnectionViewTest {
         var injector = TestFxModules.createInjector(configDir, stage);
         fxmlLoader = injector.getInstance(GuiceFXMLLoader.class);
         configService = injector.getInstance(ConfigService.class);
+        mongoService = injector.getInstance(MongoService.class);
         showConnectionScene();
     }
 
@@ -96,6 +101,8 @@ class ConnectionViewTest {
         robot.clickOn("#userTxt").write("appuser");
         robot.clickOn("#passwordTxt").write("s3cret");
         robot.clickOn("Test Connection");
+        verify(mongoService, timeout(2000)).testConnection("cluster.example.net", "appuser", "s3cret", "admin");
+        WaitForAsyncUtils.waitForFxEvents();
         verifyThat("#nameTxt", hasText("prod"));
     }
 

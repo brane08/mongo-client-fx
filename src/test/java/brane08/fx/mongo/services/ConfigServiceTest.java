@@ -81,41 +81,18 @@ class ConfigServiceTest {
 
     @Test
     void load_encPasswordWithoutKey_throwsApplicationException(@TempDir Path dir) throws IOException {
-        Files.writeString(
-                dir.resolve("connections.conf"),
-                """
-                connections = [
-                  {
-                    name = "prod"
-                    servers = "cluster.example.mongodb.net"
-                    username = "appuser"
-                    password = "ENC:dGFtpered=="
-                    database = "admin"
-                  }
-                ]
-                """);
-
         var service = new ConfigService(dir);
+        service.save("prod", "cluster.example.mongodb.net", "appuser", "pw", "admin");
+        Files.delete(dir.resolve(".key"));
 
         assertThrows(ApplicationException.class, () -> service.getConnectionData("prod"));
     }
 
     @Test
     void undecryptableEntry_doesNotBreakListingOrSavingOthers(@TempDir Path dir) throws IOException {
-        Files.writeString(
-                dir.resolve("connections.conf"),
-                """
-                connections = [
-                  {
-                    name = "orphan"
-                    servers = "cluster.example.mongodb.net"
-                    username = "appuser"
-                    password = "ENC:dGFtpered=="
-                    database = "admin"
-                  }
-                ]
-                """);
         var service = new ConfigService(dir);
+        service.save("orphan", "cluster.example.mongodb.net", "appuser", "pw", "admin");
+        Files.delete(dir.resolve(".key"));
 
         assertEquals(List.of("orphan"), service.getConnectionNames());
 
@@ -124,7 +101,67 @@ class ConfigServiceTest {
         assertEquals(List.of("orphan", "fresh"), service.getConnectionNames());
         assertEquals("p", service.getConnectionData("fresh").password());
         assertThrows(ApplicationException.class, () -> service.getConnectionData("orphan"));
-        assertTrue(Files.readString(dir.resolve("connections.conf")).contains("ENC:dGFtpered=="));
+    }
+
+    @Test
+    void plaintextPasswordStartingWithEncPrefix_isReturnedAsIs(@TempDir Path dir) throws IOException {
+        Files.writeString(
+                dir.resolve("connections.conf"),
+                """
+                connections = [
+                  { name = "odd", servers = "h", username = "u", password = "ENC:not-base64!", database = "db" }
+                ]
+                """);
+
+        assertEquals("ENC:not-base64!", new ConfigService(dir).getConnectionData("odd").password());
+    }
+
+    @Test
+    void malformedConfFile_throwsApplicationException(@TempDir Path dir) throws IOException {
+        Files.writeString(dir.resolve("connections.conf"), "connections = [ { name = \n");
+        var service = new ConfigService(dir);
+
+        assertThrows(ApplicationException.class, service::getConnectionNames);
+    }
+
+    @Test
+    void entryMissingField_throwsApplicationException(@TempDir Path dir) throws IOException {
+        Files.writeString(dir.resolve("connections.conf"), "connections = [ { name = \"x\" } ]\n");
+        var service = new ConfigService(dir);
+
+        assertThrows(ApplicationException.class, service::getConnectionNames);
+    }
+
+    @Test
+    void save_createsOwnerOnlyConfigDirectory(@TempDir Path parent) throws IOException {
+        var dir = parent.resolve("cfg");
+        new ConfigService(dir).save("a", "h", "u", "p", "db");
+
+        if (dir.getFileSystem().supportedFileAttributeViews().contains("posix")) {
+            assertEquals(
+                    java.nio.file.attribute.PosixFilePermissions.fromString("rwx------"),
+                    Files.getPosixFilePermissions(dir));
+        }
+    }
+
+    @Test
+    void concurrentSaves_fromSeparateServices_loseNoUpdates(@TempDir Path dir) throws Exception {
+        var threads = 8;
+        var pool = java.util.concurrent.Executors.newFixedThreadPool(threads);
+        try {
+            var futures = new java.util.ArrayList<java.util.concurrent.Future<?>>();
+            for (var i = 0; i < threads; i++) {
+                var name = "conn" + i;
+                futures.add(pool.submit(() -> new ConfigService(dir).save(name, "h", "u", "p", "db")));
+            }
+            for (var future : futures) {
+                future.get();
+            }
+        } finally {
+            pool.shutdownNow();
+        }
+
+        assertEquals(threads, new ConfigService(dir).getConnectionNames().size());
     }
 
     @Test

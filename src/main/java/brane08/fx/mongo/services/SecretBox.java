@@ -56,6 +56,26 @@ public final class SecretBox {
         }
     }
 
+    /** True only for well-formed {@code ENC:} values, so a plaintext password that merely starts with the prefix is not misread. */
+    public static boolean looksEncrypted(String value) {
+        if (value == null || !value.startsWith(PREFIX)) {
+            return false;
+        }
+        try {
+            return Base64.getDecoder().decode(value.substring(PREFIX.length())).length >= IV_BYTES + TAG_BITS / 8;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    /** Creates {@code dir} (and parents) and restricts the leaf to the owner where POSIX permissions are supported. */
+    static void createPrivateDirectory(Path dir) throws IOException {
+        Files.createDirectories(dir);
+        if (dir.getFileSystem().supportedFileAttributeViews().contains("posix")) {
+            Files.setPosixFilePermissions(dir, PosixFilePermissions.fromString("rwx------"));
+        }
+    }
+
     public String decrypt(String encoded) {
         if (encoded == null || !encoded.startsWith(PREFIX)) {
             throw new ApplicationException("Value is not an encrypted secret (missing " + PREFIX + " prefix)");
@@ -92,7 +112,7 @@ public final class SecretBox {
         Path temp = null;
         try {
             var dir = keyFile.toAbsolutePath().getParent();
-            Files.createDirectories(dir);
+            createPrivateDirectory(dir);
             temp = Files.createTempFile(dir, keyFile.getFileName() + ".", ".tmp", ownerOnly());
             Files.write(temp, bytes);
             publish(temp);

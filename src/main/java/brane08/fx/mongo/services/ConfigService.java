@@ -3,14 +3,17 @@ package brane08.fx.mongo.services;
 import brane08.fx.mongo.ApplicationException;
 import brane08.fx.mongo.config.Connection;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigRenderOptions;
 import com.typesafe.config.ConfigValueFactory;
 import java.io.IOException;
+import java.nio.channels.FileChannel;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,6 +24,8 @@ public class ConfigService {
 
     static final String CONF_FILE = "connections.conf";
     static final String KEY_FILE = ".key";
+    static final String LOCK_FILE = ".lock";
+    private static final Object JVM_LOCK = new Object();
     static final String CONNECTIONS = "connections";
     static final String DEFAULT_DIR = ".mongo-client-fx";
     static final String NAME = "name";
@@ -56,16 +61,31 @@ public class ConfigService {
                 stored.name(), stored.servers(), stored.username(), decryptPassword(stored.password()), stored.database());
     }
 
+    /**
+     * Serialised across threads (JVM-wide monitor, since file locks cannot overlap within one JVM) and across
+     * processes (lock file) so concurrent saves cannot lose updates.
+     */
     public void save(String name, String servers, String username, String password, String database) {
-        var connections = new ArrayList<>(loadConnections());
-        var updated = new Connection(name, servers, username, secretBox.encrypt(password), database);
-        var existing = indexOf(connections, name);
-        if (existing >= 0) {
-            connections.set(existing, updated);
-        } else {
-            connections.add(updated);
+        synchronized (JVM_LOCK) {
+            try {
+                SecretBox.createPrivateDirectory(configDir);
+                try (var channel = FileChannel.open(
+                                configDir.resolve(LOCK_FILE), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+                        var _ = channel.lock()) {
+                    var connections = new ArrayList<>(loadConnections());
+                    var updated = new Connection(name, servers, username, secretBox.encrypt(password), database);
+                    var existing = indexOf(connections, name);
+                    if (existing >= 0) {
+                        connections.set(existing, updated);
+                    } else {
+                        connections.add(updated);
+                    }
+                    writeConnections(connections);
+                }
+            } catch (IOException e) {
+                throw new ApplicationException("Unable to save connections", e);
+            }
         }
-        writeConnections(connections);
     }
 
     /** Returns connections with passwords exactly as stored (possibly still encrypted). */
@@ -73,11 +93,15 @@ public class ConfigService {
         if (!Files.exists(confFile)) {
             return List.of();
         }
-        var config = ConfigFactory.parseFile(confFile.toFile());
-        if (!config.hasPath(CONNECTIONS)) {
-            return List.of();
+        try {
+            var config = ConfigFactory.parseFile(confFile.toFile());
+            if (!config.hasPath(CONNECTIONS)) {
+                return List.of();
+            }
+            return config.getConfigList(CONNECTIONS).stream().map(this::toConnection).toList();
+        } catch (ConfigException e) {
+            throw new ApplicationException("Unable to read connections from " + confFile, e);
         }
-        return config.getConfigList(CONNECTIONS).stream().map(this::toConnection).toList();
     }
 
     Connection toConnection(Config entry) {
@@ -90,7 +114,7 @@ public class ConfigService {
     }
 
     String decryptPassword(String password) {
-        if (password.startsWith(SecretBox.PREFIX)) {
+        if (SecretBox.looksEncrypted(password)) {
             return secretBox.decrypt(password);
         }
         return password;
@@ -98,7 +122,7 @@ public class ConfigService {
 
     void writeConnections(List<Connection> connections) {
         try {
-            Files.createDirectories(configDir);
+            SecretBox.createPrivateDirectory(configDir);
             var entries = connections.stream().map(this::toMap).toList();
             var rendered = ConfigFactory.empty()
                     .withValue(CONNECTIONS, ConfigValueFactory.fromIterable(entries))

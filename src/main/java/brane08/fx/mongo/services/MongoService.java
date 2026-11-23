@@ -19,10 +19,6 @@ public class MongoService {
     static final String SRV_SCHEME = "mongodb+srv://";
     static final String AUTH_SOURCE = "admin";
 
-    public String execute() {
-        throw new UnsupportedOperationException();
-    }
-
     public boolean testConnection(Connection connection) {
         return testConnection(connection.servers(), connection.username(), connection.password(), connection.database());
     }
