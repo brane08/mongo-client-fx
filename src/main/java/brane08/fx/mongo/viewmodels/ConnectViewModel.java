@@ -4,6 +4,7 @@ import brane08.fx.mongo.config.Connection;
 import brane08.fx.mongo.services.ConfigService;
 import brane08.fx.mongo.services.MongoService;
 import jakarta.inject.Inject;
+import java.util.function.Supplier;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -76,11 +77,16 @@ public class ConnectViewModel {
     }
 
     public void testConnection() {
-        LOGGER.log(System.Logger.Level.INFO, "Calling save connection!{0}", name.get());
-        testConnection.set(mongoService.testConnection(
-                connectionString.get(),
-                userName.get(),
-                password.get(),
-                database.get()));
+        LOGGER.log(System.Logger.Level.INFO, "Calling test connection!{0}", name.get());
+        testConnection.set(prepareTest().get());
+    }
+
+    /** Snapshots the current field values so the (blocking) test can run off the FX thread. */
+    public Supplier<Boolean> prepareTest() {
+        var servers = connectionString.get();
+        var user = userName.get();
+        var pass = password.get();
+        var db = database.get();
+        return () -> mongoService.testConnection(servers, user, pass, db);
     }
 }
